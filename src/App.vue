@@ -3,15 +3,17 @@ import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <header class="navbar bg-light shadow-sm">
-    <div
-      class="container-fluid d-flex justify-content-between align-items-center"
+  <div class="min-vh-100 bg-light">
+    <header
+      class="d-flex p-3 justify-content-between align-items-center bg-white shadow-sm mb-4"
     >
-      <h4>Where is the world?</h4>
-      <p>Dark Mode</p>
-    </div>
-  </header>
-  <div class="container">
-    <RouterView />
+      <nav class="container d-flex justify-content-between align-items-center">
+        <h4>Where is the world?</h4>
+        <button class="btn">Dark Mode</button>
+      </nav>
+    </header>
+    <main class="container position-relative">
+      <RouterView />
+    </main>
   </div>
 </template>

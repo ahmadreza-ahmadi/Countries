@@ -1,36 +1,83 @@
 <script setup>
 import { ref } from 'vue'
-import countries from '../db/countries.json'
+import { onMounted } from 'vue'
 import CountryCard from '../components/CountryCard.vue'
-import SearchCountry from '../components/SearchCountry.vue'
-import FilterCountry from '../components/FilterCountry.vue'
-const searchInput = ref('')
-const filterInput = ref('')
-const handleChnageSearchInput = (event) => {
-  searchInput.value = event.target.value
+import SearchFilter from '../components/SearchFilter.vue'
+import RegionFilter from '../components/RegionFilter.vue'
+
+const countries = ref()
+const regions = ref()
+const isLoading = ref(false)
+
+async function fetchData() {
+  isLoading.value = true
+
+  // Get Countries
+  await fetch('https://restcountries.com/v3.1/all')
+    .then((res) => res.json())
+    .then((data) => (countries.value = data))
+    .catch((err) => console.log(err))
+
+  // Get Regions
+  await fetch('https://api.thecompaniesapi.com/v1/locations/continents')
+    .then((res) => res.json())
+    .then((data) => (regions.value = data.continents))
+    .catch((err) => console.log(err))
+
+  isLoading.value = false
 }
-const handleChnageFilterInput = (event) => {
-  filterInput.value = event.target.value
-}
+
+onMounted(() => {
+  fetchData()
+})
 </script>
 
 <template>
-  <main>
-    <SearchCountry @changeSearchInput="handleChnageSearchInput" />
-    <p>Search Input Value: {{ searchInput }}</p>
-    <FilterCountry @changeFilterInput="handleChnageFilterInput" />
-    <p>Filter Input Value: {{ filterInput }}</p>
-    <div class="row gx-5">
+  <div>
+    <!-- Loading -->
+    <div
+      v-if="isLoading"
+      class="position-fixed top-0 start-0 vw-100 h-100 bg-white d-flex justify-content-center align-items-center"
+      style="z-index: 2"
+    >
+      <div class="spinner-border" role="status">
+        <span class="sr-only"></span>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row justify-content-between mb-4">
+      <!-- Search Filter -->
+      <div class="col-3">
+        <SearchFilter />
+      </div>
+
+      <!-- Region Filter -->
+      <div class="w-auto">
+        <RegionFilter>
+          <option
+            v-if="!isLoading"
+            v-for="region in regions"
+            :key="region.code"
+            :value="region.code"
+          >
+            {{ region.name }}
+          </option>
+        </RegionFilter>
+      </div>
+    </div>
+
+    <!-- Cards Wrapper -->
+    <div class="row justify-content-center g-5">
       <CountryCard
         v-for="country in countries"
         :key="country.id"
-        :name="country.name"
+        :name="country.name.common"
         :population="country.population"
         :region="country.region"
         :capital="country.capital"
-        :image="country.image"
-        class="col-sm-1 col-md-3 bg-white"
+        :flag="country.flags.svg"
       />
     </div>
-  </main>
+  </div>
 </template>
