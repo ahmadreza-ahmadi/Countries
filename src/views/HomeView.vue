@@ -1,34 +1,49 @@
 <script setup>
-import { ref } from 'vue'
+import axios from 'axios'
 import { onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import CountryCard from '../components/CountryCard.vue'
 import SearchFilter from '../components/SearchFilter.vue'
 import RegionFilter from '../components/RegionFilter.vue'
 
-const countries = ref()
-const regions = ref()
+const countriesAPI = ref()
+const regionsAPI = ref()
+const countries = ref(countriesAPI)
+const regions = ref(regionsAPI)
 const isLoading = ref(false)
 
-async function fetchData() {
+const searchText = ref()
+
+// Get Countries
+async function getCountries() {
   isLoading.value = true
 
-  // Get Countries
-  await fetch('https://restcountries.com/v3.1/all')
-    .then((res) => res.json())
-    .then((data) => (countries.value = data))
-    .catch((err) => console.log(err))
+  const res = axios.get('https://restcountries.com/v3.1/all')
+  countriesAPI.value = res.data
 
-  // Get Regions
-  await fetch('https://api.thecompaniesapi.com/v1/locations/continents')
-    .then((res) => res.json())
-    .then((data) => (regions.value = data.continents))
-    .catch((err) => console.log(err))
+  isLoading.value = false
+}
+
+async function getRegions() {
+  isLoading.value = true
+
+  const res = await axios.get(
+    'https://API.thecompaniesAPI.com/v1/locations/continents'
+  )
+  regionsAPI.value = res.data.continents
 
   isLoading.value = false
 }
 
 onMounted(() => {
-  fetchData()
+  getCountries()
+  getRegions()
+})
+
+watch(searchText, () => {
+  countries.value = countriesAPI.filter((country) =>
+    country.name.toLowerCase().includes(searchText.value.toLowerCase())
+  )
 })
 </script>
 
@@ -69,6 +84,9 @@ onMounted(() => {
 
     <!-- Cards Wrapper -->
     <div class="row justify-content-center g-5">
+      <em v-if="!countries" class="text-danger h5 text-center">
+        Oops!... Something went wrong in loading countries
+      </em>
       <CountryCard
         v-for="country in countries"
         :key="country.id"

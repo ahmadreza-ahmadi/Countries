@@ -23,7 +23,7 @@ const props = defineProps(['name', 'population', 'region', 'capital', 'flag'])
           >Region: <span class="fw-normal">{{ props.region }}</span></small
         >
         <small class="text-truncate fw-medium h6"
-          >Capital: <span class="fw-normal">{{ props.region }}</span></small
+          >Capital: <span class="fw-normal">{{ props.capital[0] }}</span></small
         >
       </div>
     </div>
