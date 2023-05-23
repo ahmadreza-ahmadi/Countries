@@ -1,50 +1,52 @@
 <script setup>
-import axios from 'axios'
-import { onMounted } from 'vue'
-import { ref, watch } from 'vue'
-import CountryCard from '../components/CountryCard.vue'
-import SearchFilter from '../components/SearchFilter.vue'
-import RegionFilter from '../components/RegionFilter.vue'
+import axios from 'axios';
+import { onMounted } from 'vue';
+import { ref, watch } from 'vue';
+import CountryCard from '../components/CountryCard.vue';
+import SearchFilter from '../components/SearchFilter.vue';
+import RegionFilter from '../components/RegionFilter.vue';
 
-const countriesAPI = ref()
-const regionsAPI = ref()
-const countries = ref(countriesAPI)
-const regions = ref(regionsAPI)
-const isLoading = ref(false)
+const countriesAPI = ref();
+const regionsAPI = ref();
+const countries = ref(countriesAPI);
+const regions = ref(regionsAPI);
+const isLoading = ref(false);
 
-const searchText = ref()
+const searchText = ref();
 
 // Get Countries
 async function getCountries() {
-  isLoading.value = true
+  isLoading.value = true;
 
-  const res = axios.get('https://restcountries.com/v3.1/all')
-  countriesAPI.value = res.data
+  const res = axios.get('https://restcountries.com/v3.1/all');
+  countriesAPI.value = res.data;
 
-  isLoading.value = false
+  isLoading.value = false;
 }
 
 async function getRegions() {
-  isLoading.value = true
+  isLoading.value = true;
 
   const res = await axios.get(
     'https://API.thecompaniesAPI.com/v1/locations/continents'
-  )
-  regionsAPI.value = res.data.continents
+  );
+  regionsAPI.value = res.data.continents;
 
-  isLoading.value = false
+  isLoading.value = false;
 }
 
 onMounted(() => {
-  getCountries()
-  getRegions()
-})
+  getCountries();
+  getRegions();
+});
 
-watch(searchText, () => {
-  countries.value = countriesAPI.filter((country) =>
-    country.name.toLowerCase().includes(searchText.value.toLowerCase())
-  )
-})
+if (countries.length >= 1) {
+  watch(searchText, () => {
+    countries.value = countriesAPI.filter((country) =>
+      country.name.toLowerCase().includes(searchText.value.toLowerCase())
+    );
+  });
+}
 </script>
 
 <template>
@@ -64,7 +66,10 @@ watch(searchText, () => {
     <div class="row justify-content-between mb-4">
       <!-- Search Filter -->
       <div class="col-3">
-        <SearchFilter />
+        <SearchFilter
+          :modelValue="searchText"
+          @update:modelValue="(newValue) => (searchText = newValue)"
+        />
       </div>
 
       <!-- Region Filter -->
