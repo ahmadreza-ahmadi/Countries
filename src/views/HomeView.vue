@@ -99,17 +99,10 @@ if (countries) {
 
     <!-- Cards Wrapper -->
     <div class="row justify-content-center g-5">
-      <!-- <em v-if="!countries" class="text-danger h5 text-center">
-        Oops!... Something went wrong in loading countries
-      </em> -->
       <CountryCard
         v-for="country in countries"
         :key="country.id"
-        :name="country.name.common"
-        :population="country.population"
-        :region="country.region"
-        :capital="country.capital"
-        :flag="country.flags.svg"
+        :country="country"
       />
     </div>
   </div>
