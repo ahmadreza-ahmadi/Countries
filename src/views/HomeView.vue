@@ -8,42 +8,48 @@ import RegionFilter from '../components/RegionFilter.vue';
 
 const countriesAPI = ref();
 const regionsAPI = ref();
-const countries = ref(countriesAPI);
+const countries = ref();
 const regions = ref(regionsAPI);
 const isLoading = ref(false);
 
-const searchText = ref();
+const searchText = ref('');
+const regionFilterText = ref('');
 
 // Get Countries
 async function getCountries() {
-  isLoading.value = true;
+  const res = await axios.get('https://restcountries.com/v3.1/all');
+  countriesAPI.value = await res.data;
 
-  const res = axios.get('https://restcountries.com/v3.1/all');
-  countriesAPI.value = res.data;
-
-  isLoading.value = false;
+  countries.value = countriesAPI.value;
 }
 
+// Get Regions
 async function getRegions() {
-  isLoading.value = true;
-
   const res = await axios.get(
     'https://API.thecompaniesAPI.com/v1/locations/continents'
   );
   regionsAPI.value = res.data.continents;
-
-  isLoading.value = false;
 }
 
-onMounted(() => {
-  getCountries();
-  getRegions();
+onMounted(async () => {
+  isLoading.value = true;
+  await getRegions();
+  await getCountries();
+  isLoading.value = false;
 });
 
-if (countries.length >= 1) {
+if (countries) {
+  // Watch for searchText change
   watch(searchText, () => {
-    countries.value = countriesAPI.filter((country) =>
-      country.name.toLowerCase().includes(searchText.value.toLowerCase())
+    countries.value = countriesAPI.value.filter((country) =>
+      country.name.common.toLowerCase().includes(searchText.value.toLowerCase())
+    );
+  });
+
+  // Watch for regionFilterText change
+  watch(regionFilterText, () => {
+    countries.value = countriesAPI.filter(
+      (country) => country.region.toLowerCase() === regionFilterText.value
     );
   });
 }
@@ -74,7 +80,11 @@ if (countries.length >= 1) {
 
       <!-- Region Filter -->
       <div class="w-auto">
-        <RegionFilter>
+        <RegionFilter
+          :regionFilterText="regionFilterText"
+          @update:regionFilterText="(newValue) => (regionFilterText = newValue)"
+        >
+          <!-- Is that beeter to change value of a ref or not? -->
           <option
             v-if="!isLoading"
             v-for="region in regions"
@@ -89,9 +99,9 @@ if (countries.length >= 1) {
 
     <!-- Cards Wrapper -->
     <div class="row justify-content-center g-5">
-      <em v-if="!countries" class="text-danger h5 text-center">
+      <!-- <em v-if="!countries" class="text-danger h5 text-center">
         Oops!... Something went wrong in loading countries
-      </em>
+      </em> -->
       <CountryCard
         v-for="country in countries"
         :key="country.id"
