@@ -3,8 +3,8 @@ import axios from 'axios';
 import { onMounted } from 'vue';
 import { ref, watch } from 'vue';
 import CountryCard from '../components/CountryCard.vue';
-import SearchFilter from '../components/SearchFilter.vue';
-import RegionFilter from '../components/RegionFilter.vue';
+import SearchBar from '../components/SearchBar.vue';
+import SelectMenu from '../components/SelectMenu.vue';
 
 const countriesAPI = ref();
 const regionsAPI = ref();
@@ -13,7 +13,7 @@ const regions = ref(regionsAPI);
 const isLoading = ref(false);
 
 const searchText = ref('');
-const regionFilterText = ref('');
+const SelectMenuText = ref('');
 
 // Get Countries
 async function getCountries() {
@@ -46,10 +46,10 @@ if (countries) {
     );
   });
 
-  // Watch for regionFilterText change
-  watch(regionFilterText, () => {
+  // Watch for SelectMenuText change
+  watch(SelectMenuText, () => {
     countries.value = countriesAPI.filter(
-      (country) => country.region.toLowerCase() === regionFilterText.value
+      (country) => country.region.toLowerCase() === SelectMenuText.value
     );
   });
 }
@@ -72,7 +72,7 @@ if (countries) {
     <div class="row justify-content-between mb-4">
       <!-- Search Filter -->
       <div class="col-3">
-        <SearchFilter
+        <SearchBar
           :modelValue="searchText"
           @update:modelValue="(newValue) => (searchText = newValue)"
         />
@@ -80,9 +80,9 @@ if (countries) {
 
       <!-- Region Filter -->
       <div class="w-auto">
-        <RegionFilter
-          :regionFilterText="regionFilterText"
-          @update:regionFilterText="(newValue) => (regionFilterText = newValue)"
+        <SelectMenu
+          :SelectMenuText="SelectMenuText"
+          @update:SelectMenuText="(newValue) => (SelectMenuText = newValue)"
         >
           <!-- Is that beeter to change value of a ref or not? -->
           <option
@@ -93,7 +93,7 @@ if (countries) {
           >
             {{ region.name }}
           </option>
-        </RegionFilter>
+        </SelectMenu>
       </div>
     </div>
 
