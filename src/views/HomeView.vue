@@ -6,21 +6,22 @@ import CountryCard from '../components/CountryCard.vue';
 import SearchBar from '../components/SearchBar.vue';
 import SelectMenu from '../components/SelectMenu.vue';
 
-const countriesAPI = ref();
-const regionsAPI = ref();
+const countriesApi = ref();
+const regionsApi = ref();
 const countries = ref();
-const regions = ref(regionsAPI);
+const regions = ref(regionsApi);
 const isLoading = ref(false);
 
+// Filters Texts
 const searchText = ref('');
-const SelectMenuText = ref('');
+const selectMenuText = ref('');
 
 // Get Countries
 async function getCountries() {
   const res = await axios.get('https://restcountries.com/v3.1/all');
-  countriesAPI.value = await res.data;
+  countriesApi.value = await res.data;
 
-  countries.value = countriesAPI.value;
+  countries.value = countriesApi.value;
 }
 
 // Get Regions
@@ -28,7 +29,7 @@ async function getRegions() {
   const res = await axios.get(
     'https://API.thecompaniesAPI.com/v1/locations/continents'
   );
-  regionsAPI.value = res.data.continents;
+  regionsApi.value = res.data.continents;
 }
 
 onMounted(async () => {
@@ -38,19 +39,30 @@ onMounted(async () => {
   isLoading.value = false;
 });
 
-if (countries) {
-  // Watch for searchText change
+if (countries /* has some country... */) {
+  // Watch for searchText variable (reactive value) changes
   watch(searchText, () => {
-    countries.value = countriesAPI.value.filter((country) =>
+    countries.value = countriesApi.value.filter((country) =>
       country.name.common.toLowerCase().includes(searchText.value.toLowerCase())
     );
   });
 
-  // Watch for SelectMenuText change
-  watch(SelectMenuText, () => {
-    countries.value = countriesAPI.filter(
-      (country) => country.region.toLowerCase() === SelectMenuText.value
-    );
+  // Watch for selectMenuText variable (reactive value) changes
+  watch(selectMenuText, () => {
+    if (selectMenuText.value /* has value... */) {
+      // Find name of selected region in RegionAPI variable (reactive value) based on its code.
+      const selectedRegion = regionsApi.value.find(
+        (region) => region.code === selectMenuText.value
+      );
+      // Filter countries based on selected region
+      countries.value = countriesApi.value.filter(
+        (country) =>
+          country.region.toLowerCase() === selectedRegion.name.toLowerCase()
+      );
+    } else {
+      // that means client choose "All" in select menu
+      countries.value = countriesApi.value;
+    }
   });
 }
 </script>
@@ -81,8 +93,8 @@ if (countries) {
       <!-- Region Filter -->
       <div class="w-auto">
         <SelectMenu
-          :SelectMenuText="SelectMenuText"
-          @update:SelectMenuText="(newValue) => (SelectMenuText = newValue)"
+          :modelValue="selectMenuText"
+          @update:modelValue="(newValue) => (selectMenuText = newValue)"
         >
           <!-- Is that beeter to change value of a ref or not? -->
           <option
