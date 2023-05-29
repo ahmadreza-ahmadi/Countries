@@ -1,7 +1,6 @@
 <script setup>
 import axios from 'axios';
-import { onMounted } from 'vue';
-import { ref, watch } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import CountryCard from '../components/CountryCard.vue';
 import SearchBar from '../components/SearchBar.vue';
 import SelectMenu from '../components/SelectMenu.vue';
@@ -39,30 +38,41 @@ onMounted(async () => {
   isLoading.value = false;
 });
 
+function resetCountries() {
+  countries.value = countriesApi.value;
+}
+
+function searchChangeHandler() {
+  countries.value = countries.value.filter((country) =>
+    country.name.common.toLowerCase().includes(searchText.value.toLowerCase())
+  );
+}
+
+function regionFilterChangeHandler() {
+  resetCountries();
+  if (selectMenuText.value /* has value... */) {
+    // Find name of selected region in RegionAPI variable (reactive value) based on its code.
+    const selectedRegion = regionsApi.value.find(
+      (region) => region.code === selectMenuText.value
+    );
+    // Filter countries based on selected region
+    countries.value = countries.value.filter(
+      (country) =>
+        country.region.toLowerCase() === selectedRegion.name.toLowerCase()
+    );
+  }
+}
+
 if (countries /* has some country... */) {
   // Watch for searchText variable (reactive value) changes
   watch(searchText, () => {
-    countries.value = countriesApi.value.filter((country) =>
-      country.name.common.toLowerCase().includes(searchText.value.toLowerCase())
-    );
+    regionFilterChangeHandler();
+    searchChangeHandler();
   });
 
   // Watch for selectMenuText variable (reactive value) changes
   watch(selectMenuText, () => {
-    if (selectMenuText.value /* has value... */) {
-      // Find name of selected region in RegionAPI variable (reactive value) based on its code.
-      const selectedRegion = regionsApi.value.find(
-        (region) => region.code === selectMenuText.value
-      );
-      // Filter countries based on selected region
-      countries.value = countriesApi.value.filter(
-        (country) =>
-          country.region.toLowerCase() === selectedRegion.name.toLowerCase()
-      );
-    } else {
-      // that means client choose "All" in select menu
-      countries.value = countriesApi.value;
-    }
+    regionFilterChangeHandler();
   });
 }
 </script>
