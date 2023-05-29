@@ -1,14 +1,20 @@
 <script setup>
 import axios from 'axios';
-import { ref, watch, computed, onMounted } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import CountryCard from '../components/CountryCard.vue';
 import SearchBar from '../components/SearchBar.vue';
 import SelectMenu from '../components/SelectMenu.vue';
 
 const countriesApi = ref();
-const regionsApi = ref();
 const countries = ref();
-const regions = ref(regionsApi);
+const regions = ref([
+  { id: 1, name: 'Asia' },
+  { id: 2, name: 'Oceania' },
+  { id: 3, name: 'Europe' },
+  { id: 4, name: 'Americas' },
+  { id: 5, name: 'Antarctic' },
+  { id: 6, name: 'Africa' },
+]);
 const isLoading = ref(false);
 
 // Filters Texts
@@ -23,17 +29,8 @@ async function getCountries() {
   countries.value = countriesApi.value;
 }
 
-// Get Regions
-async function getRegions() {
-  const res = await axios.get(
-    'https://API.thecompaniesAPI.com/v1/locations/continents'
-  );
-  regionsApi.value = res.data.continents;
-}
-
 onMounted(async () => {
   isLoading.value = true;
-  await getRegions();
   await getCountries();
   isLoading.value = false;
 });
@@ -51,10 +48,9 @@ function searchChangeHandler() {
 function regionFilterChangeHandler() {
   resetCountries();
   if (selectMenuText.value /* has value... */) {
-    searchText.value = '';
-    // Find name of selected region in RegionAPI variable (reactive value) based on its code.
-    const selectedRegion = regionsApi.value.find(
-      (region) => region.code === selectMenuText.value
+    // Find name of selected region in regions variable (reactive value) based on its id.
+    const selectedRegion = regions.value.find(
+      (region) => region.id === selectMenuText.value
     );
     // Filter countries based on selected region
     countries.value = countries.value.filter(
@@ -74,6 +70,7 @@ if (countries /* has some country... */) {
   // Watch for selectMenuText variable (reactive value) changes
   watch(selectMenuText, () => {
     regionFilterChangeHandler();
+    searchChangeHandler();
   });
 }
 </script>
@@ -111,8 +108,8 @@ if (countries /* has some country... */) {
           <option
             v-if="!isLoading"
             v-for="region in regions"
-            :key="region.code"
-            :value="region.code"
+            :key="region.id"
+            :value="region.id"
           >
             {{ region.name }}
           </option>
