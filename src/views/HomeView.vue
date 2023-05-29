@@ -51,6 +51,7 @@ function searchChangeHandler() {
 function regionFilterChangeHandler() {
   resetCountries();
   if (selectMenuText.value /* has value... */) {
+    searchText.value = '';
     // Find name of selected region in RegionAPI variable (reactive value) based on its code.
     const selectedRegion = regionsApi.value.find(
       (region) => region.code === selectMenuText.value
