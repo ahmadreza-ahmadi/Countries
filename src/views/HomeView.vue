@@ -1,10 +1,11 @@
 <script setup>
 import axios from 'axios';
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, computed, onMounted } from 'vue';
 import CountryCard from '../components/CountryCard.vue';
 import SearchBar from '../components/SearchBar.vue';
 import SelectMenu from '../components/SelectMenu.vue';
 
+// Datas
 const countriesApi = ref();
 const countries = ref();
 const regions = ref([
@@ -15,63 +16,99 @@ const regions = ref([
   { id: 5, name: 'Antarctic' },
   { id: 6, name: 'Africa' },
 ]);
+
+// Pagination variables
+const currentPage = ref(1);
+const countriesPerPage = 8;
+const pageLimit = computed(() => currentPage.value * countriesPerPage);
+const pageOffset = computed(() => pageLimit.value - countriesPerPage);
+const pagesNumber = ref();
+let currentPageCountries = [];
+
+// Network and loading variables
 const isLoading = ref(false);
+const networkErrorMessage = ref('');
 
-// Filters Texts
+// Filters variables
 const searchText = ref('');
-const selectMenuText = ref('');
-
-// Get Countries
-async function getCountries() {
-  const res = await axios.get('https://restcountries.com/v3.1/all');
-  countriesApi.value = await res.data;
-
-  countries.value = countriesApi.value;
-}
-
-onMounted(async () => {
-  isLoading.value = true;
-  await getCountries();
-  isLoading.value = false;
+const regionFilterValue = ref('');
+const selectedRegion = computed(() => {
+  return regions.value.find((region) => region.id === regionFilterValue.value);
 });
 
+// Watchers
+watch(currentPage, () => {
+  setCurrentPageCountries();
+});
+
+watch(countries, () => {
+  calculatePageNumber();
+  setCurrentPageCountries();
+});
+
+watch(searchText, () => {
+  regionFilterChangeHandler();
+  searchChangeHandler();
+  setCurrentPageCountries();
+});
+
+watch(regionFilterValue, () => {
+  regionFilterChangeHandler();
+  searchChangeHandler();
+});
+
+// Lifecycle methods
+onMounted(async () => {
+  await getCountries();
+});
+
+// Functions
+async function getCountries() {
+  isLoading.value = true;
+  try {
+    const res = await axios.get('https://restcountries.com/v2/all');
+    countriesApi.value = await res.data;
+    countries.value = countriesApi.value;
+    setCurrentPageCountries();
+    calculatePageNumber();
+    console.log(countries.value.length > 8);
+  } catch (error) {
+    networkErrorMessage.value = error.message;
+  }
+  isLoading.value = false;
+}
+
 function resetCountries() {
-  countries.value = countriesApi.value;
+  countries.value = Object.values(countriesApi.value);
+}
+
+function setCurrentPageCountries() {
+  currentPageCountries = countries.value.slice(
+    pageOffset.value,
+    pageLimit.value
+  );
 }
 
 function searchChangeHandler() {
+  currentPage.value = 1;
   countries.value = countries.value.filter((country) =>
-    country.name.common.toLowerCase().includes(searchText.value.toLowerCase())
+    country.name.toLowerCase().includes(searchText.value.toLowerCase())
   );
 }
 
 function regionFilterChangeHandler() {
   resetCountries();
-  if (selectMenuText.value /* has value... */) {
-    // Find name of selected region in regions variable (reactive value) based on its id.
-    const selectedRegion = regions.value.find(
-      (region) => region.id === selectMenuText.value
-    );
+  if (regionFilterValue.value /* has value... */) {
     // Filter countries based on selected region
     countries.value = countries.value.filter(
       (country) =>
-        country.region.toLowerCase() === selectedRegion.name.toLowerCase()
+        country.region.toLowerCase() === selectedRegion.value.name.toLowerCase()
     );
   }
 }
 
-if (countries /* has some country... */) {
-  // Watch for searchText variable (reactive value) changes
-  watch(searchText, () => {
-    regionFilterChangeHandler();
-    searchChangeHandler();
-  });
-
-  // Watch for selectMenuText variable (reactive value) changes
-  watch(selectMenuText, () => {
-    regionFilterChangeHandler();
-    searchChangeHandler();
-  });
+function calculatePageNumber() {
+  pagesNumber.value = Math.ceil(countries.value.length / countriesPerPage);
 }
 </script>
 
@@ -80,7 +117,7 @@ if (countries /* has some country... */) {
     <!-- Loading -->
     <div
       v-if="isLoading"
-      class="position-fixed top-0 start-0 vw-100 h-100 bg-white d-flex justify-content-center align-items-center"
+      class="position-fixed top-0 start-0 w-100 h-100 bg-white d-flex justify-content-center align-items-center"
       style="z-index: 2"
     >
       <div class="spinner-border" role="status">
@@ -89,9 +126,9 @@ if (countries /* has some country... */) {
     </div>
 
     <!-- Filters -->
-    <div class="row justify-content-between mb-4">
+    <div class="row justify-content-between">
       <!-- Search Filter -->
-      <div class="col-3">
+      <div class="col-6 col-md-4 col-lg-3">
         <SearchBar
           :modelValue="searchText"
           @update:modelValue="(newValue) => (searchText = newValue)"
@@ -101,8 +138,8 @@ if (countries /* has some country... */) {
       <!-- Region Filter -->
       <div class="w-auto">
         <SelectMenu
-          :modelValue="selectMenuText"
-          @update:modelValue="(newValue) => (selectMenuText = newValue)"
+          :modelValue="regionFilterValue"
+          @update:modelValue="(newValue) => (regionFilterValue = newValue)"
         >
           <!-- Is that beeter to change value of a ref or not? -->
           <option
@@ -119,11 +156,58 @@ if (countries /* has some country... */) {
 
     <!-- Cards Wrapper -->
     <div class="row justify-content-center g-5">
+      <!-- Error Handlers -->
+      <div class="text-center h5">
+        <span v-if="countriesApi && !countries.length" class="text-primary">
+          There is not country with name "{{ searchText }}" in
+          {{ selectedRegion ? selectedRegion.name : 'all' }} region{{
+            selectedRegion ? null : 's'
+          }}
+        </span>
+        <span v-if="!countriesApi" class="text-danger">
+          {{ networkErrorMessage }}
+        </span>
+      </div>
+
       <CountryCard
-        v-for="country in countries"
+        v-for="country in currentPageCountries"
         :key="country.id"
         :country="country"
       />
+    </div>
+
+    <div
+      v-if="countriesApi && countries.length > countriesPerPage"
+      class="d-flex justify-content-center align-items-center p-4"
+    >
+      <button
+        @click="currentPage = 1"
+        class="btn border-end-0 btn-outline-primary rounded-0 rounded-start"
+        :class="{ disabled: currentPage === 1 }"
+      >
+        First Page
+      </button>
+      <button
+        @click="currentPage--"
+        class="btn border-end-0 btn-outline-primary rounded-0"
+        :class="{ disabled: currentPage === 1 }"
+      >
+        Prev
+      </button>
+      <button
+        @click="currentPage++"
+        class="btn border-end-0 btn-outline-primary rounded-0"
+        :class="{ disabled: currentPage === pagesNumber }"
+      >
+        Next
+      </button>
+      <button
+        @click="currentPage = pagesNumber"
+        class="btn btn-outline-primary rounded-0 rounded-end"
+        :class="{ disabled: currentPage === pagesNumber }"
+      >
+        Last Page
+      </button>
     </div>
   </div>
 </template>
