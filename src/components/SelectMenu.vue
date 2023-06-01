@@ -1,22 +1,27 @@
 <script setup>
-import { computed } from 'vue';
+// --------------------
+// ---> Propertise <---
+// --------------------
+const props = defineProps({
+  modelValue: {
+    type: Number,
+    required: true
+  }
+})
 
-const props = defineProps(['modelValue']);
-const emit = defineEmits(['update:modelValue']);
-
-const value = computed({
-  get() {
-    return props.modelValue;
-  },
-  set(value) {
-    emit('update:modelValue', value);
-  },
-});
+// ----------------
+// ---> Events <---
+// ----------------
+const emit = defineEmits(['update:modelValue'])
 </script>
 
 <template>
-  <select class="form-select w-auto py-2" v-model="value">
-    <option value="" selected>All</option>
+  <select
+    :value="modelValue"
+    @change="$emit('update:modelValue', parseInt($event.target.value))"
+    class="form-select w-auto py-2"
+  >
+    <option value="0" selected>All</option>
     <slot></slot>
   </select>
 </template>

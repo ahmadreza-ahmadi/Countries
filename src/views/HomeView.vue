@@ -1,114 +1,113 @@
 <script setup>
-import axios from 'axios';
-import { ref, watch, computed, onMounted } from 'vue';
-import CountryCard from '../components/CountryCard.vue';
-import SearchBar from '../components/SearchBar.vue';
-import SelectMenu from '../components/SelectMenu.vue';
+import axios from 'axios'
+import { ref, watch, computed, onMounted } from 'vue'
+import CountryCard from '../components/CountryCard.vue'
+import SearchBar from '../components/SearchBar.vue'
+import SelectMenu from '../components/SelectMenu.vue'
 
 // Datas
-const countriesApi = ref();
-const countries = ref();
+const countriesApi = ref()
+const countries = ref()
 const regions = ref([
   { id: 1, name: 'Asia' },
   { id: 2, name: 'Oceania' },
   { id: 3, name: 'Europe' },
   { id: 4, name: 'Americas' },
   { id: 5, name: 'Antarctic' },
-  { id: 6, name: 'Africa' },
-]);
+  { id: 6, name: 'Africa' }
+])
 
 // Pagination variables
-const currentPage = ref(1);
-const countriesPerPage = 8;
-const pageLimit = computed(() => currentPage.value * countriesPerPage);
-const pageOffset = computed(() => pageLimit.value - countriesPerPage);
-const pagesNumber = ref();
-let currentPageCountries = [];
+const currentPage = ref(1)
+const countriesPerPage = 8
+const pageLimit = computed(() => currentPage.value * countriesPerPage)
+const pageOffset = computed(() => pageLimit.value - countriesPerPage)
+const pagesNumber = ref()
+let currentPageCountries = []
 
 // Network and loading variables
-const isLoading = ref(false);
-const networkErrorMessage = ref('');
+const isLoading = ref(false)
+const networkErrorMessage = ref('')
 
 // Filters variables
-const searchText = ref('');
-const regionFilterValue = ref('');
+const searchText = ref('')
+const regionFilterValue = ref(0)
 const selectedRegion = computed(() => {
-  return regions.value.find((region) => region.id === regionFilterValue.value);
-});
+  return regions.value.find((region) => region.id === regionFilterValue.value)
+})
 
 // Watchers
 watch(currentPage, () => {
-  setCurrentPageCountries();
-});
+  setCurrentPageCountries()
+})
 
 watch(countries, () => {
-  calculatePageNumber();
-  setCurrentPageCountries();
-});
+  calculatePageNumber()
+  setCurrentPageCountries()
+})
 
 watch(searchText, () => {
-  regionFilterChangeHandler();
-  searchChangeHandler();
-  setCurrentPageCountries();
-});
+  regionFilterChangeHandler()
+  searchChangeHandler()
+  setCurrentPageCountries()
+})
 
 watch(regionFilterValue, () => {
-  regionFilterChangeHandler();
-  searchChangeHandler();
-});
+  regionFilterChangeHandler()
+  searchChangeHandler()
+})
 
 // Lifecycle methods
 onMounted(async () => {
-  await getCountries();
-});
+  await getCountries()
+})
 
 // Functions
 async function getCountries() {
-  isLoading.value = true;
+  isLoading.value = true
   try {
-    const res = await axios.get('https://restcountries.com/v2/all');
-    countriesApi.value = await res.data;
-    countries.value = countriesApi.value;
-    setCurrentPageCountries();
-    calculatePageNumber();
-    console.log(countries.value.length > 8);
+    const res = await axios.get('https://restcountries.com/v2/all')
+    countriesApi.value = await res.data
+    countries.value = countriesApi.value
+    setCurrentPageCountries()
+    calculatePageNumber()
   } catch (error) {
-    networkErrorMessage.value = error.message;
+    networkErrorMessage.value = error.message
   }
-  isLoading.value = false;
+  isLoading.value = false
 }
 
 function resetCountries() {
-  countries.value = Object.values(countriesApi.value);
+  countries.value = Object.values(countriesApi.value)
 }
 
 function setCurrentPageCountries() {
   currentPageCountries = countries.value.slice(
     pageOffset.value,
     pageLimit.value
-  );
+  )
 }
 
 function searchChangeHandler() {
-  currentPage.value = 1;
+  currentPage.value = 1
   countries.value = countries.value.filter((country) =>
     country.name.toLowerCase().includes(searchText.value.toLowerCase())
-  );
+  )
 }
 
 function regionFilterChangeHandler() {
-  resetCountries();
+  resetCountries()
   if (regionFilterValue.value /* has value... */) {
     // Filter countries based on selected region
     countries.value = countries.value.filter(
       (country) =>
         country.region.toLowerCase() === selectedRegion.value.name.toLowerCase()
-    );
+    )
   }
 }
 
 function calculatePageNumber() {
-  pagesNumber.value = Math.ceil(countries.value.length / countriesPerPage);
+  pagesNumber.value = Math.ceil(countries.value.length / countriesPerPage)
 }
 </script>
 
@@ -129,18 +128,12 @@ function calculatePageNumber() {
     <div class="row justify-content-between">
       <!-- Search Filter -->
       <div class="col-6 col-md-4 col-lg-3">
-        <SearchBar
-          :modelValue="searchText"
-          @update:modelValue="(newValue) => (searchText = newValue)"
-        />
+        <SearchBar v-model="searchText" />
       </div>
 
       <!-- Region Filter -->
       <div class="w-auto">
-        <SelectMenu
-          :modelValue="regionFilterValue"
-          @update:modelValue="(newValue) => (regionFilterValue = newValue)"
-        >
+        <SelectMenu v-model="regionFilterValue">
           <!-- Is that beeter to change value of a ref or not? -->
           <option
             v-if="!isLoading"

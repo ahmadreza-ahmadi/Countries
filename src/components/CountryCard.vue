@@ -1,5 +1,13 @@
 <script setup>
-const props = defineProps(['country']);
+// --------------------
+// ---> Propertise <---
+// --------------------
+const props = defineProps({
+  country: {
+    type: Object,
+    required: true
+  }
+})
 </script>
 
 <template>
@@ -8,26 +16,24 @@ const props = defineProps(['country']);
       class="d-flex flex-column p-0 rounded shadow-sm overflow-hidden h-100 bg-white"
     >
       <img
-        :src="props.country.flag"
-        :alt="props.country.name"
+        :src="country.flag"
+        :alt="country.name"
         class="w-100 border-light h-50 border-bottom"
         style="object-fit: cover; object-position: center"
       />
       <div class="d-flex flex-column p-4">
-        <h4 class="text-truncate fw-bold">{{ props.country.name }}</h4>
+        <h4 class="text-truncate fw-bold">{{ country.name }}</h4>
         <small class="text-truncate fw-medium h6"
           >Population:
           <span class="fw-normal">{{
-            props.country.population.toLocaleString('en-US')
+            country.population.toLocaleString('en-US')
           }}</span></small
         >
         <small class="text-truncate fw-medium h6"
-          >Region:
-          <span class="fw-normal">{{ props.country.region }}</span></small
+          >Region: <span class="fw-normal">{{ country.region }}</span></small
         >
         <small class="text-truncate fw-medium h6"
-          >Capital:
-          <span class="fw-normal">{{ props.country.capital }}</span></small
+          >Capital: <span class="fw-normal">{{ country.capital }}</span></small
         >
       </div>
     </div>
