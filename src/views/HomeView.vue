@@ -1,13 +1,21 @@
 <script setup>
 import axios from 'axios'
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, computed, watch, watchEffect } from 'vue'
 import CountryCard from '../components/CountryCard.vue'
 import SearchBar from '../components/SearchBar.vue'
 import SelectMenu from '../components/SelectMenu.vue'
 
-// Datas
-const countriesApi = ref()
-const countries = ref()
+// -------------
+// ---> API <---
+// -------------
+const API_URL = 'https://restcountries.com'
+const API_VERSION = 2
+
+// --------------
+// ---> Refs <---
+// --------------
+const countries = ref(null)
+const filteredCountries = ref(null)
 const regions = ref([
   { id: 1, name: 'Asia' },
   { id: 2, name: 'Oceania' },
@@ -16,32 +24,43 @@ const regions = ref([
   { id: 5, name: 'Antarctic' },
   { id: 6, name: 'Africa' }
 ])
-
-// Pagination variables
 const currentPage = ref(1)
 const countriesPerPage = 8
 const pageLimit = computed(() => currentPage.value * countriesPerPage)
 const pageOffset = computed(() => pageLimit.value - countriesPerPage)
-const pagesNumber = ref()
-let currentPageCountries = []
-
-// Network and loading variables
-const isLoading = ref(false)
+const pagesNumber = ref(0)
+const currentPageCountries = ref([])
 const networkErrorMessage = ref('')
-
-// Filters variables
+const isLoading = ref(true)
 const searchText = ref('')
 const regionFilterValue = ref(0)
+
+// -----------------------------
+// ---> Computed Propertise <---
+// -----------------------------
 const selectedRegion = computed(() => {
   return regions.value.find((region) => region.id === regionFilterValue.value)
 })
 
-// Watchers
+// ------------------
+// ---> Watchers <---
+// ------------------
+watchEffect(async () => {
+  const url = `${API_URL}/v${API_VERSION}/all`
+  try {
+    countries.value = await (await axios.get(url)).data
+    filteredCountries.value = countries.value
+  } catch (error) {
+    networkErrorMessage.value = error.message
+  }
+  isLoading.value = false
+})
+
 watch(currentPage, () => {
   setCurrentPageCountries()
 })
 
-watch(countries, () => {
+watch(filteredCountries, () => {
   calculatePageNumber()
   setCurrentPageCountries()
 })
@@ -57,32 +76,15 @@ watch(regionFilterValue, () => {
   searchChangeHandler()
 })
 
-// Lifecycle methods
-onMounted(async () => {
-  await getCountries()
-})
-
-// Functions
-async function getCountries() {
-  isLoading.value = true
-  try {
-    const res = await axios.get('https://restcountries.com/v2/all')
-    countriesApi.value = await res.data
-    countries.value = countriesApi.value
-    setCurrentPageCountries()
-    calculatePageNumber()
-  } catch (error) {
-    networkErrorMessage.value = error.message
-  }
-  isLoading.value = false
-}
-
+// -----------------
+// ---> Methods <---
+// -----------------
 function resetCountries() {
-  countries.value = Object.values(countriesApi.value)
+  filteredCountries.value = Object.values(countries.value)
 }
 
 function setCurrentPageCountries() {
-  currentPageCountries = countries.value.slice(
+  currentPageCountries.value = filteredCountries.value.slice(
     pageOffset.value,
     pageLimit.value
   )
@@ -90,7 +92,7 @@ function setCurrentPageCountries() {
 
 function searchChangeHandler() {
   currentPage.value = 1
-  countries.value = countries.value.filter((country) =>
+  filteredCountries.value = filteredCountries.value.filter((country) =>
     country.name.toLowerCase().includes(searchText.value.toLowerCase())
   )
 }
@@ -99,7 +101,7 @@ function regionFilterChangeHandler() {
   resetCountries()
   if (regionFilterValue.value /* has value... */) {
     // Filter countries based on selected region
-    countries.value = countries.value.filter(
+    filteredCountries.value = filteredCountries.value.filter(
       (country) =>
         country.region.toLowerCase() === selectedRegion.value.name.toLowerCase()
     )
@@ -107,7 +109,9 @@ function regionFilterChangeHandler() {
 }
 
 function calculatePageNumber() {
-  pagesNumber.value = Math.ceil(countries.value.length / countriesPerPage)
+  pagesNumber.value = Math.ceil(
+    filteredCountries.value.length / countriesPerPage
+  )
 }
 </script>
 
@@ -135,12 +139,7 @@ function calculatePageNumber() {
       <div class="w-auto">
         <SelectMenu v-model="regionFilterValue">
           <!-- Is that beeter to change value of a ref or not? -->
-          <option
-            v-if="!isLoading"
-            v-for="region in regions"
-            :key="region.id"
-            :value="region.id"
-          >
+          <option v-for="region in regions" :key="region.id" :value="region.id">
             {{ region.name }}
           </option>
         </SelectMenu>
@@ -151,13 +150,16 @@ function calculatePageNumber() {
     <div class="row justify-content-center g-5">
       <!-- Error Handlers -->
       <div class="text-center h5">
-        <span v-if="countriesApi && !countries.length" class="text-primary">
+        <span
+          v-if="countries && !filteredCountries.length"
+          class="text-primary"
+        >
           There is not country with name "{{ searchText }}" in
           {{ selectedRegion ? selectedRegion.name : 'all' }} region{{
             selectedRegion ? null : 's'
           }}
         </span>
-        <span v-if="!countriesApi" class="text-danger">
+        <span v-if="!countries" class="text-danger">
           {{ networkErrorMessage }}
         </span>
       </div>
@@ -170,7 +172,7 @@ function calculatePageNumber() {
     </div>
 
     <div
-      v-if="countriesApi && countries.length > countriesPerPage"
+      v-if="countries && filteredCountries.length > countriesPerPage"
       class="d-flex justify-content-center align-items-center p-4"
     >
       <button
