@@ -180,28 +180,28 @@ function calculatePageNumber() {
         class="btn border-end-0 btn-outline-primary rounded-0 rounded-start"
         :class="{ disabled: currentPage === 1 }"
       >
-        First Page
+        &lt;&lt;
       </button>
       <button
         @click="currentPage--"
         class="btn border-end-0 btn-outline-primary rounded-0"
         :class="{ disabled: currentPage === 1 }"
       >
-        Prev
+        &lt;
       </button>
       <button
         @click="currentPage++"
         class="btn border-end-0 btn-outline-primary rounded-0"
         :class="{ disabled: currentPage === pagesNumber }"
       >
-        Next
+        &gt;
       </button>
       <button
         @click="currentPage = pagesNumber"
         class="btn btn-outline-primary rounded-0 rounded-end"
         :class="{ disabled: currentPage === pagesNumber }"
       >
-        Last Page
+        &gt;&gt;
       </button>
     </div>
   </div>
